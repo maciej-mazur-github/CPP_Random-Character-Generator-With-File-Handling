@@ -1,4 +1,6 @@
 #pragma once
 
-void wczytajDoPliku();  // deklaracje wstepne dwoch funkcji zdefiniowanych dalej (za funkcja main)
-void odczytajZPliku();  // jak wyzej
+void generateAndSaveInFile(); 
+void readFromFile();  
+void run();
+void printMenu();

@@ -1,62 +1,98 @@
-#include <iostream>   // do oblugi standardowych strumieni wyjscia/wejscia (cout oraz cin)
-#include <fstream>   // do obslugi plikow
-#include <conio.h>  // dla funkcji _getch() umozliwiajacej utrzymanie otwartej konsoli do momentu nacisniecia dowolnego klawisza
-#include <cstdlib>
+#include <iostream>   
+#include <fstream>  
+#include <cstdlib>  // for functions rand() and srand() 
+#include "random_character_generator.h"
 using namespace std;
 
 
-void wczytajDoPliku() {
-	char tablica[15];
+void run()
+{
+	int choice;
+	bool quit = false;
 
-	srand(time(0));   // umozliwia seedowanie generatora liczb pseudolosowych rand() w zaleznosci od czasu systemowego 
-	// dzieki temu kazde kolejne uzycie rand() wygeneruje inne liczby (bez tego generowane bylyby ciagle te same)
+	while (!quit) 
+	{   
+		printMenu();
+		cin >> choice;
+
+		switch (choice) 
+		{
+		case 1:
+			generateAndSaveInFile();
+			break;
+		case 2:
+			readFromFile();
+			break;
+		case 3:
+			quit = true;
+			cout << "\nYou chose to quit the program...\n";
+			break;
+		default:
+			cout << "Incorrect number picked. Please try again...\n";
+		}
+	}
+}
+
+void printMenu()
+{
+	cout << "\n\nChoose one of the following options:\n"
+		<< "\t1) Generate random letters and save them in file letters.txt\n"
+		<< "\t2) Read all the letters from letters.txt and print them on the screen\n"
+		<< "\t3) Quit the program\n\n"
+		<< "\tWhat is your choice? ";
+}
+
+void generateAndSaveInFile() {
+	char charArray[15];
+
+	srand(time(0));   // seeding rand() generator to make sure that it generates a different set of numbers each time it is used (it would otherwise always generate the same numbers as per program instance)
+	int randomNumber;
 
 	for (int i = 0; i < 15; i++) {
-		tablica[i] = (char)((rand() % 25) + 97);  // %25 ogranicza przedzial wygenerowanych liczb do 0-25
-		// +97 przeksztalca wygenerowane liczby w odpowiadajace im male znaki ASCII poczawszy od 
-		// 97 (czyli od malego "a")
+		do
+		{
+			randomNumber = (rand() % 58) + 65;    // to start from ASCII 65 (letter 'A') and to set up a span of 58 positions (65 + 58 = 123) keeping in mind that modulo 58 can only reach 57 as a result (which in fact is a desired span)
+		} while (randomNumber > 90 && randomNumber < 97);    // excluding ASCII letters 91-96 (they are not letters; as per design the program should only generate letters)
+
+		charArray[i] = (char)randomNumber; 
 	}
 
-	ofstream plik("znaki.txt");  // otwarcie pliku znaki.txt do zapisu; jesli plik ten jeszcze w folderze nie istnieje, to zostanie stworzony
-	// jesli zas istnieje, to jego pierwotna zawartosc zostanie na wstepie wykasowana
+	ofstream file("letters.txt");  // it creates a new letters.txt file if it did not exist earlier or it opens an existing letters.txt
 
-	if (!plik) {    // dzieki przeladowaniu operatorow klasy fstream zmienna strumieniowa plik bedzie miec wartosc logiczna false
-		// jesli przy powyzszym otwarciu pliku wystapil jakis blad; w przeciwnymm razie bedzie miec wartosc true
-		cout << "Wystapil blad przy otwieraniu pliku znaki.txt\nSprobuj ponownie";
+	if (!file) {    
+		cout << "An error occurred during attempt to open file letters.txt\nPlease try again" << endl;
 		return;
 	}
 
 	for (int i = 0; i < 15; i++) {
-		if (!plik.put(tablica[i])) {  // warunek, ktory jednoczesnie sprawdza, czy w strumieniu nie pojawil sie podczas zapisu jakis blad oraz
-			// dopisuje do pliku kolejne znaki z tablicy
-			cout << "Wystapil blad podczas zapisywania do pliku znaki.txt\n";
+		if (!file.put(charArray[i])) {  
+			cout << "An error occurred during an attempt to write to file letters.txt\n";
 			return;
 		}
 	}
 
-	if (plik) {    // jesli po wczytaniu wszystkich znakow z tablicy zadna z flag stanu strumienia nie zostala ustawiona (jesli strumien nie ma bledow)
-		cout << "\nTablica losowych znakow zostala prawidlowo zapisana w pliku znaki.txt\nMozesz teraz uzyc opcji 2) by wyswietlic zawartosc pliku.\n\n\n";
+	if (file) {    // final check whether any of stream error flags has been set
+		cout << "\nRandom letters array has been successfully generated and saved to file letters.txt";
 	}
 }
 
 
-void odczytajZPliku() {
-	ifstream plik("znaki.txt");  // otwarcie pliku do odczytu
+void readFromFile() {
+	ifstream file("letters.txt");  
 
-	if (!plik) {   // jesli otwarcie pliku nie powiodlo sie np. dlatego, ze plik jeszcze nie istnieje w folderze projektu
-		cout << "\nOtwarcie pliku znaki.txt nie powiodlo sie. Upewnij sie, by uzyc najpierw opcji 1) celem stworzenia pliku, z ktorego program"
-			<< " bedzie mogl odczytac dane.\n";
+	if (!file) {   // in case the desired file does not yet exist
+		cout << "\nAn error occurred during the attempt to open file letters.txt. Please make sure that this file exists by first choosing option 1)\n";
 		return;
 	}
 
-	char znak;
 
-	while (plik.get(znak)) {  // w tej petli wydrukowany na ekranie zostanie kolejno kazdy znak z pliku
-		// petle te przerywa dopiero napotkanie EOF (end of file), ktory ustawi wartosc logiczna strumienia plik na false
-		cout << znak;
+	cout << "The current set of 15 randomly generated letters in the file letters.txt is as follows:\n\t";
+	char letter;
+	while (file.get(letter)) {  
+		cout << letter;
 	}
 
-	if (!plik.eof()) {  // jesli zczytywanie z pliku zakonczone zostalo z innego powodu niz napotkanie konca pliku
-		cout << "\nBlad odczytu pliku znaki.txt\n";
+	if (!file.eof()) {  // if above reading of file characters has been completed but somehow the end of file has not yet been reached
+		cout << "\nAn error occurred when reading from letters.txt\n";
 	}
 }
